@@ -54,8 +54,8 @@
       ],
       "toolchain": "GCC",
       "compileConfig": {
-        "cpuType": "Cortex-M3",
-        "floatingPointHardware": "default",
+        "cpuType": "Cortex-M4",
+        "floatingPointHardware": "single",
         "useCustomScatterFile": true,
         "scatterFilePath": ".\\n32g430_flash.ld",
         "storageLayout": {
@@ -120,7 +120,8 @@
         "libList": [],
         "sourceDirList": [],
         "defineList": [
-          "USE_STDPERIPH_DRIVER"
+          "USE_STDPERIPH_DRIVER",
+          "N32G430"
         ]
       }
     }

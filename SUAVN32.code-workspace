@@ -2,9 +2,6 @@
     "folders": [
         {
             "path": "."
-        },
-        {
-            "path": "../19_suav_光流/suav_n32"
         }
     ],
     "settings": {
