@@ -82,7 +82,7 @@ int main(void)
         if (printTestTimer >= 2) {
             printTestTimer = 0;
 
-            // 姿态角和气压计高度
+            // 濮挎�佽鍜屾皵鍘嬭楂樺害
             printf("%f,%f,%f,%ld,", angle[ROLL] / 100.0f, angle[PITCH] / 100.0f, angle[YAW] / 100.0f, BaroAlt);
             printf("%d,%d,%d,%d\n", rcCommand[ROLL], rcCommand[PITCH], rcCommand[THROTTLE], rcCommand[YAW]);
             //      printf("%.2f\n", batValue);

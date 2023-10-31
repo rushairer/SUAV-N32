@@ -38,7 +38,7 @@ int32_t AltHold;
 int32_t BaroPID      = 0;
 int16_t BaroThrottle = 1550;
 
-// ¿ØÖÆ±äÁ¿
+// æ§åˆ¶å˜é‡
 uint8_t altitudeCtrlTimer = 0;
 int16_t setVel            = 0;
 
@@ -83,7 +83,7 @@ int32_t applyBarometerMedianFilter(int32_t newPressureReading)
 }
 
 //--------------------------------------------------------------------------------------------------------------
-//                               ¶¨¸ß(Íâ»·PID)
+//                               å®šé«˜(å¤–ç¯PID)
 //--------------------------------------------------------------------------------------------------------------
 void altitude_baro_update(void)
 {
@@ -118,7 +118,7 @@ void altitude_baro_update(void)
             baroPressureAvg = baroPressure;
         //----------------------------------------------------------------------------------------------------
 
-        // ¼ÆËãµ±Ç°¸ß¶È
+        // è®¡ç®—å½“å‰é«˜åº¦
         if ((calibratingB > 0) || (!fc.flags.motorArmed && !fc.flags.motorIdle)) {
             if (calibratingB == BCALIBRATING_BARO_CYCLES) baroGroundPressure = baroPressureAvg * 10;
             baroGroundPressure -= baroGroundPressure / 10;
@@ -137,10 +137,10 @@ void altitude_baro_update(void)
         BaroAlt_tmp -= baroGroundAltitude;
         BaroAlt = (float)BaroAlt * 0.7f + (float)BaroAlt_tmp * (1.0f - 0.7f); // additional LPF to reduce baro noise
 
-        // ¼ÆËãËÙ¶È	mm/s
+        // è®¡ç®—é€Ÿåº¦	mm/s
         baroVel = baroVel * 3.0f / 4.0f + (BaroAlt - lastBaroAlt) * 8;
         baroVel = constrain(baroVel, -2000, 3000); // constrain baro velocity +/- 5000mm/s
-        //      baroVel = applyDeadband(baroVel, 100);                                     // to reduce noise near zero	 10cm/s			È¥ÎÂÆ®
+        //      baroVel = applyDeadband(baroVel, 100);                                     // to reduce noise near zero	 10cm/s			å»æ¸©é£˜
 
         lastBaroAlt = BaroAlt;
 
@@ -149,7 +149,7 @@ void altitude_baro_update(void)
 }
 
 //--------------------------------------------------------------------------------------------------------------
-//                                ¶¨¸ß(ÖĞ»·PID)
+//                                å®šé«˜(ä¸­ç¯PID)
 //--------------------------------------------------------------------------------------------------------------
 void __attribute__((weak)) getEstimatedAltitude(void)
 {
@@ -210,7 +210,7 @@ void __attribute__((weak)) getEstimatedAltitude(void)
     vel = constrain_float(vel, VELOCITY_SPEEDDOWN_MAX - 200, VELOCITY_SPEEDUP_MAX + 200);
 
     //----------------------------------------------------------------------------
-    // Èç¹ûÂí´ïÎ´½âËø»òÕß´¦ÓÚ´ı»ú×´Ì¬£¬ËùÓĞ×´Ì¬¹éÁã
+    // å¦‚æœé©¬è¾¾æœªè§£é”æˆ–è€…å¤„äºå¾…æœºçŠ¶æ€ï¼Œæ‰€æœ‰çŠ¶æ€å½’é›¶
     if (!fc.flags.motorArmed) {
         fc.flags.bVelocityControl = 0;
         AltHold                   = EstAlt;
@@ -313,7 +313,7 @@ void __attribute__((weak)) getEstimatedAltitude(void)
     }
 }
 
-// ¶¨¸ß
+// å®šé«˜
 void altitude_ctrl(void)
 {
     altitude_baro_update();

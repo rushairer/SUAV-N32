@@ -70,7 +70,7 @@ uint8_t accgyro_update(void)
         apply_sensor_alignment(accgyro.accRaw, accgyro.accRaw, CW270_DEG);
         apply_sensor_alignment(accgyro.gyroRaw, accgyro.gyroRaw, CW270_DEG);
 
-        // Æ«²î½Ï×¼
+        // åå·®è¾ƒå‡†
         if (accgyro.gyroCalibrating) {
             gyro_calbration(&accgyro);
         }
@@ -81,13 +81,13 @@ uint8_t accgyro_update(void)
             acc_calbration(&accgyro);
         }
 
-        // Ô­Ê¼Êı¾İ-Æ«²î
+        // åŸå§‹æ•°æ®-åå·®
         for (axis = 0; axis < 3; axis++) {
             accgyro.accValue[axis]  = accgyro.accRaw[axis] - accgyro.accRaw_offset[axis];
             accgyro.gyroValue[axis] = accgyro.gyroRaw[axis] - accgyro.gyroRaw_offset[axis];
         }
 
-        // Êı¾İÂË²¨
+        // æ•°æ®æ»¤æ³¢
         for (axis = 0; axis < 3; axis++) {
             accgyro.accData[axis]  = biquadFilterApply(&accFilter[axis], accgyro.accValue[axis]);
             accgyro.gyroData[axis] = pt1FilterApply(&gyroFilter[axis], accgyro.gyroValue[axis]);
@@ -110,7 +110,7 @@ void gyro_calbration(accgyro_s *gyro)
     uint8_t axis;
     int32_t dif;
 
-    // ¿ªÊ¼½Ï×¼£¬³õÊ¼»¯±äÁ¿¡£
+    // å¼€å§‹è¾ƒå‡†ï¼Œåˆå§‹åŒ–å˜é‡ã€‚
     if (gyroCalInit) {
         for (axis = 0; axis < 3; axis++) {
             gyroSum[axis]  = 0;
@@ -120,7 +120,7 @@ void gyro_calbration(accgyro_s *gyro)
         gyroCalInit = 0;
     }
 
-// ½Ï×¼ÖĞ£¬Èç¹ûÆ«²î´óÓÚÉè¶¨Öµ£¬ÖØĞÂ¿ªÊ¼¡£
+// è¾ƒå‡†ä¸­ï¼Œå¦‚æœåå·®å¤§äºè®¾å®šå€¼ï¼Œé‡æ–°å¼€å§‹ã€‚
 #define GYRO_CALI_DIFF_LIMIT 50
     for (axis = 0; axis < 3; axis++) {
         dif = gyroInit[axis] - gyro->gyroRaw[axis];
@@ -132,7 +132,7 @@ void gyro_calbration(accgyro_s *gyro)
         }
     }
 
-    // ½Ï×¼Íê³É£¬È¡¾ùÖµ×÷Îªoffset¡£Í¬Ê±ÖÃÎ»gyroCalInit£¬Áô×÷ÏÂ´Î½Ï×¼Ê¹ÓÃ¡£
+    // è¾ƒå‡†å®Œæˆï¼Œå–å‡å€¼ä½œä¸ºoffsetã€‚åŒæ—¶ç½®ä½gyroCalInitï¼Œç•™ä½œä¸‹æ¬¡è¾ƒå‡†ä½¿ç”¨ã€‚
     if (++count >= 256) {
         for (axis = 0; axis < 3; axis++) {
             gyro->gyroRaw_offset[axis] = gyroSum[axis] / count;
@@ -154,7 +154,7 @@ void acc_calbration(accgyro_s *acc)
     uint8_t axis;
     int32_t dif;
 
-    // ¿ªÊ¼½Ï×¼£¬³õÊ¼»¯±äÁ¿¡£
+    // å¼€å§‹è¾ƒå‡†ï¼Œåˆå§‹åŒ–å˜é‡ã€‚
     if (accCalInit) {
         for (axis = 0; axis < 3; axis++) {
             accSum[axis]       = 0;
@@ -165,7 +165,7 @@ void acc_calbration(accgyro_s *acc)
         accCalInit = 0;
     }
 
-// ½Ï×¼ÖĞ£¬Èç¹ûÍÓÂİÒÇÆ«²î´óÓÚÉè¶¨Öµ£¬ÖØĞÂ¿ªÊ¼¡£
+// è¾ƒå‡†ä¸­ï¼Œå¦‚æœé™€èºä»ªåå·®å¤§äºè®¾å®šå€¼ï¼Œé‡æ–°å¼€å§‹ã€‚
 #define ACC_CALI_GYRO_DIFF_LIMIT 50
     for (axis = 0; axis < 3; axis++) {
         dif = gyroInit[axis] - acc->gyroRaw[axis];
@@ -177,7 +177,7 @@ void acc_calbration(accgyro_s *acc)
         }
     }
 
-    // ½Ï×¼Íê³É£¬È¡¾ùÖµ×÷Îªoffset¡£Í¬Ê±ÖÃÎ»accCalInit£¬Áô×÷ÏÂ´Î½Ï×¼Ê¹ÓÃ¡£
+    // è¾ƒå‡†å®Œæˆï¼Œå–å‡å€¼ä½œä¸ºoffsetã€‚åŒæ—¶ç½®ä½accCalInitï¼Œç•™ä½œä¸‹æ¬¡è¾ƒå‡†ä½¿ç”¨ã€‚
     if (++count >= 256) {
         for (axis = 0; axis < 3; axis++) {
             acc->accRaw_offset[axis] = accSum[axis] / count;

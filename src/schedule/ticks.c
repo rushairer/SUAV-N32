@@ -18,64 +18,63 @@
 
 static uint16_t delayTimer;
 
-/** ÏµÍ³µÎ´ð£¬Ã¿1m»Øµ÷Ò»´Î
-  * 
-  */
+/** ç³»ç»Ÿæ»´ç­”ï¼Œæ¯1må›žè°ƒä¸€æ¬¡
+ *
+ */
 void ticks_callback(void)
 {
-  static uint8_t _cnt20ms;
-  
-  delayTimer++;
-  slot_timer++;
-  baroUpdateTimer++;
-  altitudeCtrlTimer++;
-  opticalflowCtrlTimer++;
-  
-  if(++_cnt20ms >= 20) {
-    _cnt20ms = 0;
-    ledCtrlTimer++;
-    i2cTestTimer++;
-    mpu6050TestTimer++;
-    calibrationEnbTimer++;
-    printTestTimer++;
-    powerupTimer++;
-    adcCtrlTimer++;    
-    fc.takeofflandTimer++;
-  }
+    static uint8_t _cnt20ms;
 
+    delayTimer++;
+    slot_timer++;
+    baroUpdateTimer++;
+    altitudeCtrlTimer++;
+    opticalflowCtrlTimer++;
+
+    if (++_cnt20ms >= 20) {
+        _cnt20ms = 0;
+        ledCtrlTimer++;
+        i2cTestTimer++;
+        mpu6050TestTimer++;
+        calibrationEnbTimer++;
+        printTestTimer++;
+        powerupTimer++;
+        adcCtrlTimer++;
+        fc.takeofflandTimer++;
+    }
 }
 
 void ticks_init(void)
 {
-  hw_tim6_init(ticks_callback);
-  hw_tim4_init(); 
+    hw_tim6_init(ticks_callback);
+    hw_tim4_init();
 }
 
 //----------------------------------------------------------------
 //----------------------------------------------------------------
 void delay_ms(uint16_t cnt)
 {
-  delayTimer = 0;
-  while(delayTimer < cnt);
+    delayTimer = 0;
+    while (delayTimer < cnt)
+        ;
 }
 
 void ticks_stop(void)
 {
-  TIM_Off(TIM6);
+    TIM_Off(TIM6);
 }
 
-// ·µ»ØÉÏµçºóÎ¢Ãë¼ÆÊ±
+// è¿”å›žä¸Šç”µåŽå¾®ç§’è®¡æ—¶
 uint16_t micros16(void)
 {
-  uint16_t mic;
-  
-//  do {
-//    cur_tick = SysTick->VAL;
-//    mic = sysTickMs*1000 + (SysTick->LOAD+1-cur_tick)/72;    
-//  } while(cur_tick > SysTick->VAL);
-  
-  mic = TIM_Base_Count_Get(TIM4);
-  
-  return mic;  
-}
+    uint16_t mic;
 
+    //  do {
+    //    cur_tick = SysTick->VAL;
+    //    mic = sysTickMs*1000 + (SysTick->LOAD+1-cur_tick)/72;
+    //  } while(cur_tick > SysTick->VAL);
+
+    mic = TIM_Base_Count_Get(TIM4);
+
+    return mic;
+}

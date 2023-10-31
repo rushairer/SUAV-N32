@@ -15,22 +15,22 @@ int16_t rcCommand[4] = {0}, rcCommandTrim[3] = {0};
 
 int16_t setVelocity = 0;
 
-void decode(uint8_t* cmd)
+void decode(uint8_t *cmd)
 {
-  fcCmd[FC_CMD_ROLL]        = cmd[0];
-  fcCmd[FC_CMD_PITCH]       = cmd[1];
-  fcCmd[FC_CMD_THROTTLE]    = cmd[2];
-  fcCmd[FC_CMD_YAW]         = cmd[3];
-    
-  fcCmd[FC_CMD_ROLL_TRIM]   = cmd[4];
-  fcCmd[FC_CMD_PITCH_TRIM]  = cmd[5];
-  fcCmd[FC_CMD_THROTTLE_TRIM] = cmd[6];
-  fcCmd[FC_CMD_YAW_TRIM]    = cmd[7];
-  
-  fcCmd[FC_CMD_FLAGS_1] = cmd[8];
-  fcCmd[FC_CMD_FLAGS_2] = cmd[9];
-  
-  fc.flags.uartCmdNew = 1;
+    fcCmd[FC_CMD_ROLL]     = cmd[0];
+    fcCmd[FC_CMD_PITCH]    = cmd[1];
+    fcCmd[FC_CMD_THROTTLE] = cmd[2];
+    fcCmd[FC_CMD_YAW]      = cmd[3];
+
+    fcCmd[FC_CMD_ROLL_TRIM]     = cmd[4];
+    fcCmd[FC_CMD_PITCH_TRIM]    = cmd[5];
+    fcCmd[FC_CMD_THROTTLE_TRIM] = cmd[6];
+    fcCmd[FC_CMD_YAW_TRIM]      = cmd[7];
+
+    fcCmd[FC_CMD_FLAGS_1] = cmd[8];
+    fcCmd[FC_CMD_FLAGS_2] = cmd[9];
+
+    fc.flags.uartCmdNew = 1;
 }
 
 void annexCode(void)
@@ -39,153 +39,148 @@ void annexCode(void)
     int16_t codeRollTrim, codePitchTrim;
     static uint8_t armCheckEnb = 0;
 
-    if(fc.flags.uartCmdNew) {	 	
-        fc.flags.uartCmdNew= 0;	
+    if (fc.flags.uartCmdNew) {
+        fc.flags.uartCmdNew = 0;
 
-        //Ö¸Áî½âÎö
-        //µ÷ÕûºóµÄÖ¸Áî·½Ïò:
-        //  1)×óÓÒ CodeRoll[rcCommand-Roll],  ×óÐ¡ÓÒ´ó
-        //  2)Ç°ºó CodePitch[rcCommand-Pitch],ºóÐ¡Ç°´ó
-        codeGas     = fcCmd[FC_CMD_THROTTLE];
-        codeRoll    = fcCmd[FC_CMD_ROLL];
-        codePitch   = fcCmd[FC_CMD_PITCH];
-        codeYaw     = fcCmd[FC_CMD_YAW];
-        codeRollTrim = fcCmd[FC_CMD_ROLL_TRIM];
+        // æŒ‡ä»¤è§£æž
+        // è°ƒæ•´åŽçš„æŒ‡ä»¤æ–¹å‘:
+        //   1)å·¦å³ CodeRoll[rcCommand-Roll],  å·¦å°å³å¤§
+        //   2)å‰åŽ CodePitch[rcCommand-Pitch],åŽå°å‰å¤§
+        codeGas       = fcCmd[FC_CMD_THROTTLE];
+        codeRoll      = fcCmd[FC_CMD_ROLL];
+        codePitch     = fcCmd[FC_CMD_PITCH];
+        codeYaw       = fcCmd[FC_CMD_YAW];
+        codeRollTrim  = fcCmd[FC_CMD_ROLL_TRIM];
         codePitchTrim = fcCmd[FC_CMD_PITCH_TRIM];
 
-        codeGas   = constrain(codeGas*4, 0, 1000);
-        codeRoll  -= STICK_ENCODE_LIMIT_MIDDLE;
+        codeGas = constrain(codeGas * 4, 0, 1000);
+        codeRoll -= STICK_ENCODE_LIMIT_MIDDLE;
         codePitch -= STICK_ENCODE_LIMIT_MIDDLE;
-        codeYaw   -= STICK_ENCODE_LIMIT_MIDDLE;
-        codeRollTrim  -= STICK_TRIM_LIMIT_RANGE;
+        codeYaw -= STICK_ENCODE_LIMIT_MIDDLE;
+        codeRollTrim -= STICK_TRIM_LIMIT_RANGE;
         codePitchTrim -= STICK_TRIM_LIMIT_RANGE;
 
-        codeRoll = applyDeadband(codeRoll, 28);
+        codeRoll  = applyDeadband(codeRoll, 28);
         codePitch = applyDeadband(codePitch, 28);
-        codeYaw = applyDeadband(codeYaw, 37);    		
+        codeYaw   = applyDeadband(codeYaw, 37);
 
-        #define VEL_CON_STICK_LIMIT_UP    650
-        #define VEL_CON_STICK_LIMIT_DOWN  375    
-        if((codeGas > VEL_CON_STICK_LIMIT_UP)) {
-            fc.flags.bVelocityControl = 1;	
-            setVelocity = (codeGas - VEL_CON_STICK_LIMIT_UP) * 5 / 2; 
-            if(setVelocity > VELOCITY_SPEEDUP_MAX) setVelocity = VELOCITY_SPEEDUP_MAX;	
+#define VEL_CON_STICK_LIMIT_UP   650
+#define VEL_CON_STICK_LIMIT_DOWN 375
+        if ((codeGas > VEL_CON_STICK_LIMIT_UP)) {
+            fc.flags.bVelocityControl = 1;
+            setVelocity               = (codeGas - VEL_CON_STICK_LIMIT_UP) * 5 / 2;
+            if (setVelocity > VELOCITY_SPEEDUP_MAX) setVelocity = VELOCITY_SPEEDUP_MAX;
             fc.flags.motorIdle = 0;
+            fc.flags.bTakeoff  = 0;
+            fc.flags.bLanding  = 0;
+        } else if (codeGas < VEL_CON_STICK_LIMIT_DOWN) {
+            fc.flags.bVelocityControl = 1;
+            setVelocity               = (codeGas - VEL_CON_STICK_LIMIT_DOWN) * 3 / 2;
+            if (setVelocity < VELOCITY_SPEEDDOWN_MAX) setVelocity = VELOCITY_SPEEDDOWN_MAX;
             fc.flags.bTakeoff = 0;
             fc.flags.bLanding = 0;
-        } else if(codeGas < VEL_CON_STICK_LIMIT_DOWN) {
-            fc.flags.bVelocityControl = 1;						
-            setVelocity = (codeGas - VEL_CON_STICK_LIMIT_DOWN) * 3 / 2;
-            if(setVelocity < VELOCITY_SPEEDDOWN_MAX) setVelocity = VELOCITY_SPEEDDOWN_MAX;	 
-            fc.flags.bTakeoff = 0;
-            fc.flags.bLanding = 0;    
-            if(fc.flags.motorIdle) {
-              fc.flags.motorArmed = 0;
-              fc.flags.motorIdle = 0;
+            if (fc.flags.motorIdle) {
+                fc.flags.motorArmed = 0;
+                fc.flags.motorIdle  = 0;
             }
-        } else {	
+        } else {
             setVelocity = 0;
-        }  
+        }
 
-        //Âí´ïµÚÒ»´ÎÔË×ªÇ°,·½Ïò¸ËÖÁÓÒÏÂ½Ç¿ªÊ¼´«¸ÐÆ÷½ÃÕý		
-        if(fc.flags.bAccGyroCalibrationEnb){	     
-            if((codePitch <= -40) && (codeRoll >= 40)){
-                if(calibrationEnbTimer < 50) goto ANEDXCODE_CALIBRATIONBK;
+        // é©¬è¾¾ç¬¬ä¸€æ¬¡è¿è½¬å‰,æ–¹å‘æ†è‡³å³ä¸‹è§’å¼€å§‹ä¼ æ„Ÿå™¨çŸ«æ­£
+        if (fc.flags.bAccGyroCalibrationEnb) {
+            if ((codePitch <= -40) && (codeRoll >= 40)) {
+                if (calibrationEnbTimer < 50) goto ANEDXCODE_CALIBRATIONBK;
                 fc.flags.bAccGyroCalibrationEnb = 0;
-                accgyro.gyroCalibrating = 1;
-                accgyro.accCalibrating = 1;         
-            }	else {
+                accgyro.gyroCalibrating         = 1;
+                accgyro.accCalibrating          = 1;
+            } else {
                 calibrationEnbTimer = 0;
             }
         }
-        ANEDXCODE_CALIBRATIONBK:
+    ANEDXCODE_CALIBRATIONBK:
 
-        // ½âËø°´¼ü°´ÏÂ
-        if(fcCmd[FC_CMD_FLAGS_1] & 0x01) { 
-            if(armCheckEnb) {
+        // è§£é”æŒ‰é”®æŒ‰ä¸‹
+        if (fcCmd[FC_CMD_FLAGS_1] & 0x01) {
+            if (armCheckEnb) {
                 armCheckEnb = 0;
-                
-                if(fc.flags.bLanding) {
+
+                if (fc.flags.bLanding) {
                     fc.flags.motorArmed = 0;
-                    fc.flags.motorIdle = 0;
-                    fc.flags.bLanding = 0;
-                } else {                
-                    if(!fc.flags.motorArmed) {
-                        fc.flags.motorArmed = 1;
-                        fc.flags.motorIdle = 1;
+                    fc.flags.motorIdle  = 0;
+                    fc.flags.bLanding   = 0;
+                } else {
+                    if (!fc.flags.motorArmed) {
+                        fc.flags.motorArmed             = 1;
+                        fc.flags.motorIdle              = 1;
                         fc.flags.bAccGyroCalibrationEnb = 0;
-                        
-                        fc.flags.bTakeoff = 1;
+
+                        fc.flags.bTakeoff   = 1;
                         fc.takeofflandTimer = 0;
-                        fc.flags.bLanding = 0;
-                        fc.takeoffAlt = EstAlt;
-                    } else if(!fc.flags.motorIdle){
-                        fc.flags.bLanding = 1;
-                        fc.takeofflandTimer = 0;       
-                        fc.flags.bTakeoff = 0;
+                        fc.flags.bLanding   = 0;
+                        fc.takeoffAlt       = EstAlt;
+                    } else if (!fc.flags.motorIdle) {
+                        fc.flags.bLanding   = 1;
+                        fc.takeofflandTimer = 0;
+                        fc.flags.bTakeoff   = 0;
                     }
                 }
             }
         } else {
             armCheckEnb = 1;
-        }    
-        
-        // ¼±Í£
-        if(fcCmd[FC_CMD_FLAGS_1] & 0x02) {
-            fc.flags.motorArmed = 0;
-            fc.flags.motorIdle = 0;
         }
 
-        // Ò»¼üÆð·É
-        if(fc.flags.bTakeoff) {
-//            if(fc.flags.motorIdle) {
-//                if(fc.takeofflandTimer >= 50) {
-//                    fc.flags.motorIdle = 0;
-//                    fc.takeoffAlt = EstAlt;
-//                    fc.takeofflandTimer = 0;
-//                }
-//            }     
-            
-            if(!fc.flags.motorIdle) {       
-                fc.flags.bVelocityControl = 1;            
-                setVelocity = 200 + fc.takeofflandTimer*10; 
-                if(setVelocity >= 800) setVelocity = 800;
-                
-                if((EstAlt-fc.takeoffAlt >= 1000) || fc.takeofflandTimer >= 150) {
+        // æ€¥åœ
+        if (fcCmd[FC_CMD_FLAGS_1] & 0x02) {
+            fc.flags.motorArmed = 0;
+            fc.flags.motorIdle  = 0;
+        }
+
+        // ä¸€é”®èµ·é£ž
+        if (fc.flags.bTakeoff) {
+            //            if(fc.flags.motorIdle) {
+            //                if(fc.takeofflandTimer >= 50) {
+            //                    fc.flags.motorIdle = 0;
+            //                    fc.takeoffAlt = EstAlt;
+            //                    fc.takeofflandTimer = 0;
+            //                }
+            //            }
+
+            if (!fc.flags.motorIdle) {
+                fc.flags.bVelocityControl = 1;
+                setVelocity               = 200 + fc.takeofflandTimer * 10;
+                if (setVelocity >= 800) setVelocity = 800;
+
+                if ((EstAlt - fc.takeoffAlt >= 1000) || fc.takeofflandTimer >= 150) {
                     fc.flags.bTakeoff = 0;
                 }
             }
         }
-        
-        // Ò»¼ü½µÂä
-        if(fc.flags.bLanding) {            
-            fc.flags.bVelocityControl = 1;	
-            setVelocity = -200 - fc.takeofflandTimer*10; 
-            if(setVelocity < VELOCITY_SPEEDDOWN_MAX) setVelocity = VELOCITY_SPEEDDOWN_MAX;
-        }        
-        
-        rcCommand[THROTTLE]   = constrain((codeGas + 1000), +1000, +2000);	      //1000 ~ 2000
 
-        rcCommand[ROLL]       = constrain(codeRoll,   -500, +500);	  						//-500 ~ +500
-        rcCommand[PITCH]      = constrain(codePitch,  -500, +500);
-        rcCommand[YAW]        = constrain(-3*codeYaw, -500, +500);
+        // ä¸€é”®é™è½
+        if (fc.flags.bLanding) {
+            fc.flags.bVelocityControl = 1;
+            setVelocity               = -200 - fc.takeofflandTimer * 10;
+            if (setVelocity < VELOCITY_SPEEDDOWN_MAX) setVelocity = VELOCITY_SPEEDDOWN_MAX;
+        }
 
-        rcCommandTrim[ROLL]   = codeRollTrim * 10;  
-        rcCommandTrim[PITCH]  = codePitchTrim * 10; 
-        rcCommandTrim[YAW]    = 0;
+        rcCommand[THROTTLE] = constrain((codeGas + 1000), +1000, +2000); // 1000 ~ 2000
 
-    } //if(f.bRxRedayCmd)
+        rcCommand[ROLL]  = constrain(codeRoll, -500, +500); //-500 ~ +500
+        rcCommand[PITCH] = constrain(codePitch, -500, +500);
+        rcCommand[YAW]   = constrain(-3 * codeYaw, -500, +500);
 
+        rcCommandTrim[ROLL]  = codeRollTrim * 10;
+        rcCommandTrim[PITCH] = codePitchTrim * 10;
+        rcCommandTrim[YAW]   = 0;
+
+    } // if(f.bRxRedayCmd)
 }
 
 void decode_test(void)
-{ 
-  if(printTestTimer >= 10) {
-    printTestTimer = 0;
-    printf("ROLL:%d, PITCH:%d, THRO:%d, YAW:%d, TrimRoll:%d, TrimPitch:%d\r\n", rcCommand[ROLL], rcCommand[PITCH],fcCmd[FC_CMD_THROTTLE],rcCommand[YAW], rcCommandTrim[ROLL], rcCommandTrim[PITCH]);  
-  }  
+{
+    if (printTestTimer >= 10) {
+        printTestTimer = 0;
+        printf("ROLL:%d, PITCH:%d, THRO:%d, YAW:%d, TrimRoll:%d, TrimPitch:%d\r\n", rcCommand[ROLL], rcCommand[PITCH], fcCmd[FC_CMD_THROTTLE], rcCommand[YAW], rcCommandTrim[ROLL], rcCommandTrim[PITCH]);
+    }
 }
-
-
-
-

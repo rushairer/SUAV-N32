@@ -107,19 +107,19 @@ uint32_t pages_number = 0;
 uint32_t ready_write_addr;
 
 /**================================================================
-        APP Ìø×ª
-        appxaddr:ÓÃ»§´úÂëÆğÊ¼µØÖ·.
+        APP è·³è½¬
+        appxaddr:ç”¨æˆ·ä»£ç èµ·å§‹åœ°å€.
 ================================================================*/
 void iap_load_app(u32 appxaddr)
 {
-    if (((*(vu32 *)appxaddr) & 0x0FFFFFFF) < 1024 * 64) // ¼ì²éÕ»¶¥µØÖ·ÊÇ·ñºÏ·¨.×î´ó64k Flash
+    if (((*(vu32 *)appxaddr) & 0x0FFFFFFF) < 1024 * 64) // æ£€æŸ¥æ ˆé¡¶åœ°å€æ˜¯å¦åˆæ³•.æœ€å¤§64k Flash
     {
         jump2app = (iapfun) * (vu32 *)(appxaddr + 4);
-        // ³õÊ¼»¯¶ÑÕ»Ö¸Õë
+        // åˆå§‹åŒ–å †æ ˆæŒ‡é’ˆ
         __set_MSP(*(__IO uint32_t *)appxaddr);
 
         //  __set_MSP(*(__IO uint32_t*) appxaddr);
-        jump2app(); // Ìø×ªµ½APP.
+        jump2app(); // è·³è½¬åˆ°APP.
     }
 }
 /**================================================================
@@ -128,7 +128,7 @@ int32_t app_flag_write(uint32_t data, uint32_t start_add)
 {
     FLASH_Unlock();
     //
-    FLASH_One_Page_Erase(start_add); // Ğ´Ö®Ç°ÏÈ²ÁÒ»±é£¬Ã¿´Î²Á2K
+    FLASH_One_Page_Erase(start_add); // å†™ä¹‹å‰å…ˆæ“¦ä¸€éï¼Œæ¯æ¬¡æ“¦2K
     if (FLASH_EOP != FLASH_Word_Program(start_add, data)) {
         FLASH_Lock();
         // printf("flash write fail! \r\n");
@@ -151,8 +151,8 @@ uint32_t FLASH_ReadWord(uint32_t address)
  * @brief
  * @param void
  * @return
- * - `SUCCESS£º ±íÊ¾²Ù×÷³É¹¦
- * - ÆäËüÖµ±íÊ¾³ö´í
+ * - `SUCCESSï¼š è¡¨ç¤ºæ“ä½œæˆåŠŸ
+ * - å…¶å®ƒå€¼è¡¨ç¤ºå‡ºé”™
  */
 int32_t app_flash_write(uint32_t *data, uint32_t Flash_address)
 {
@@ -180,13 +180,13 @@ int32_t app_flash_write(uint32_t *data, uint32_t Flash_address)
 }
 
 /**================================================================
-        //Éı¼¶APP
+        //å‡çº§APP
 ================================================================*/
 void IAP_UPDATE_APP(void)
 {
     ready_write_addr = FLASH_APP_BASE_ADDR + pages_number * 2048;
     while (app_flash_write((uint32_t *)flash_buf, ready_write_addr))
-        ; // IAPÃ¿´ÎÉı¼¶2K
+        ; // IAPæ¯æ¬¡å‡çº§2K
     memset(flash_buf, 0x00, 2048);
     pages_number++;
 }
@@ -232,16 +232,16 @@ void iap_init(void)
 //
 //		if(f_receive_app_done)
 //     {
-//			printf("suav address£º%x\r\n",(FLASH_START_ADDR));
-//			printf("¿ªÊ¼Ö´ĞĞSUAV´úÂë!!\r\n");
+//			printf("suav addressï¼š%x\r\n",(FLASH_START_ADDR));
+//			printf("å¼€å§‹æ‰§è¡ŒSUAVä»£ç !!\r\n");
 
 //      delay_ms(200);
 //      USART_Disable(DEBUG_USARTx);
 //      ticks_stop();
 //
-////      delay_ms(1000);                     ***** delay ĞèÒªÖĞ¶ÏÖ§³Ö£¬tick¹Ø±Õºó²»¿ÉÒÔÔÙµ÷ÓÃÖĞ¶Ï¡£Õâ¸ödelayÀË·ÑºÃ¼¸¸öĞ¡Ê±²ébug£¡£¡£¡£¡£¡
+////      delay_ms(1000);                     ***** delay éœ€è¦ä¸­æ–­æ”¯æŒï¼Œtickå…³é—­åä¸å¯ä»¥å†è°ƒç”¨ä¸­æ–­ã€‚è¿™ä¸ªdelayæµªè´¹å¥½å‡ ä¸ªå°æ—¶æŸ¥bugï¼ï¼ï¼ï¼ï¼
 //
-//			iap_load_app(FLASH_START_ADDR);				// Ìø×ªµ½APPÆğÊ¼µØÖ·£¬ÆÚ¼ä²»ÄÜ±»ÆäËûÖĞ¶Ï´ò¶Ï£¬·ñÔò»áÌø×ªÊ§°Ü
+//			iap_load_app(FLASH_START_ADDR);				// è·³è½¬åˆ°APPèµ·å§‹åœ°å€ï¼ŒæœŸé—´ä¸èƒ½è¢«å…¶ä»–ä¸­æ–­æ‰“æ–­ï¼Œå¦åˆ™ä¼šè·³è½¬å¤±è´¥
 //		}
 //
 //    led_test_x();

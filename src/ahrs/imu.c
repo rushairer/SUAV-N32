@@ -1,6 +1,6 @@
 
 #include "imu.h"
-#include "accgyro.h" 
+#include "accgyro.h"
 #include "../fc/fc.h"
 #include "../fc/decode.h"
 #include "../ahrs/altitude.h"
@@ -10,13 +10,13 @@
 #include <math.h>
 #include <stdio.h>
 
-float q0 = 1.0f, q1 = 0.0f, q2 = 0.0f, q3 = 0.0f;             // quaternion of sensor frame relative to earth frame 
+float q0 = 1.0f, q1 = 0.0f, q2 = 0.0f, q3 = 0.0f; // quaternion of sensor frame relative to earth frame
 static float rMat[3][3];
 
-int16_t angle[XYZ_AXIS_COUNT];                                // degree * 100;
+int16_t angle[XYZ_AXIS_COUNT]; // degree * 100;
 
 int32_t accSmooth[XYZ_AXIS_COUNT] = {0, 0, 4096};
-int32_t gyroData[XYZ_AXIS_COUNT] = {0};
+int32_t gyroData[XYZ_AXIS_COUNT]  = {0};
 
 static imuRuntimeConfig_t imuConfig;
 static imuRuntimeConfig_t *imuRuntimeConfig = &imuConfig;
@@ -25,8 +25,8 @@ static biquadFilter_t accIMUFilter[XYZ_AXIS_COUNT];
 static biquadFilter_t gyroIMUFilter[XYZ_AXIS_COUNT];
 
 //------------------------------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------------ 
-void imuComputeRotationMatrix(float (*_rMat)[3], float* q)
+//------------------------------------------------------------------------------------------------
+void imuComputeRotationMatrix(float (*_rMat)[3], float *q)
 {
     float q1q1 = SQ(q[1]);
     float q2q2 = SQ(q[2]);
@@ -52,9 +52,9 @@ void imuComputeRotationMatrix(float (*_rMat)[3], float* q)
     _rMat[2][2] = 1.0f - 2.0f * q1q1 - 2.0f * q2q2;
 }
 
-void imuTransformVectorBodyToEarth(t_fp_vector * v, float (*_rMat)[3])
+void imuTransformVectorBodyToEarth(t_fp_vector *v, float (*_rMat)[3])
 {
-    float x,y,z;
+    float x, y, z;
 
     /* From body frame to earth frame */
     x = _rMat[0][0] * v->V.X + _rMat[0][1] * v->V.Y + _rMat[0][2] * v->V.Z;
@@ -62,99 +62,98 @@ void imuTransformVectorBodyToEarth(t_fp_vector * v, float (*_rMat)[3])
     z = _rMat[2][0] * v->V.X + _rMat[2][1] * v->V.Y + _rMat[2][2] * v->V.Z;
 
     v->V.X = x;
-    v->V.Y = y;//-y;
+    v->V.Y = y; //-y;
     v->V.Z = z;
 }
 
 //------------------------------------------------------------------------------------------------
 // create a quaternion from Euler angles
-void from_euler(float roll, float pitch, float yaw, float* q)
+void from_euler(float roll, float pitch, float yaw, float *q)
 {
-    float cr2 = cosf(roll*0.5f);
-    float cp2 = cosf(pitch*0.5f);
-    float cy2 = cosf(yaw*0.5f);
-    float sr2 = sinf(roll*0.5f);
-    float sp2 = sinf(pitch*0.5f);
-    float sy2 = sinf(yaw*0.5f);
+    float cr2 = cosf(roll * 0.5f);
+    float cp2 = cosf(pitch * 0.5f);
+    float cy2 = cosf(yaw * 0.5f);
+    float sr2 = sinf(roll * 0.5f);
+    float sp2 = sinf(pitch * 0.5f);
+    float sy2 = sinf(yaw * 0.5f);
 
-    q[0] = cr2*cp2*cy2 + sr2*sp2*sy2;
-    q[1] = sr2*cp2*cy2 - cr2*sp2*sy2;
-    q[2] = cr2*sp2*cy2 + sr2*cp2*sy2;
-    q[3] = cr2*cp2*sy2 - sr2*sp2*cy2;
+    q[0] = cr2 * cp2 * cy2 + sr2 * sp2 * sy2;
+    q[1] = sr2 * cp2 * cy2 - cr2 * sp2 * sy2;
+    q[2] = cr2 * sp2 * cy2 + sr2 * cp2 * sy2;
+    q[3] = cr2 * cp2 * sy2 - sr2 * sp2 * cy2;
 }
 
 // create eulers from a quaternion
 void to_euler(float *roll, float *pitch, float *yaw)
 {
     if (roll) {
-        *roll = (atan2f(2.0f*(q0*q1 + q2*q3), 1 - 2.0f*(q1*q1 + q2*q2)));
+        *roll = (atan2f(2.0f * (q0 * q1 + q2 * q3), 1 - 2.0f * (q1 * q1 + q2 * q2)));
     }
     if (pitch) {
         // we let safe_asin() handle the singularities near 90/-90 in pitch
-        *pitch = sin_approx(2.0f*(q0*q2 - q3*q1));
+        *pitch = sin_approx(2.0f * (q0 * q2 - q3 * q1));
     }
     if (yaw) {
-        *yaw = atan2f(2.0f*(q0*q3 + q1*q2), 1 - 2.0f*(q2*q2 + q3*q3));
+        *yaw = atan2f(2.0f * (q0 * q3 + q1 * q2), 1 - 2.0f * (q2 * q2 + q3 * q3));
     }
 }
-
 
 //------------------------------------------------------------------------------------------------
 // rotate acc into Earth frame and calculate acceleration in it
 void imuCalculateAcceleration(float deltaT)
-{			
+{
     t_fp_vector accel_ned;
-		float q[4], _rMat[3][3];
+    float q[4], _rMat[3][3];
     float angleRad[3];
-		
-		//----------------------------------------------------------------------  
+
+    //----------------------------------------------------------------------
     to_euler(&angleRad[0], &angleRad[1], 0);
     from_euler(angleRad[0], angleRad[1], 0, q);
     imuComputeRotationMatrix(_rMat, q);
-				
-		//----------------------------------------------------------------------
-    accel_ned.V.X = -accgyro.accData[1]; 
-    accel_ned.V.Y = accgyro.accData[0]; 
+
+    //----------------------------------------------------------------------
+    accel_ned.V.X = -accgyro.accData[1];
+    accel_ned.V.Y = accgyro.accData[0];
     accel_ned.V.Z = accgyro.accData[2];
 
-    imuTransformVectorBodyToEarth(&accel_ned, _rMat);                 // »úÌå¼ÓËÙ¶È×ª»»³ÉµØÇò¼ÓËÙ¶È(ÒÑ¾­È¥³ýº½Ïò½ÇÓ°Ïì)
-		
-		//----------------------------------------------------------------------
-	  accel_ned.V.X -= accgyro.accTrim[0];
-	  accel_ned.V.Y -= accgyro.accTrim[1];
-    accel_ned.V.Z -= acc_1G + accgyro.accTrim[2];	
-  
-//    printf("%d, %d, %d\n", (int)accel_ned.V.Z, angle[0]/100, angle[1]/100);
-		
+    imuTransformVectorBodyToEarth(&accel_ned, _rMat); // æœºä½“åŠ é€Ÿåº¦è½¬æ¢æˆåœ°çƒåŠ é€Ÿåº¦(å·²ç»åŽ»é™¤èˆªå‘è§’å½±å“)
+
+    //----------------------------------------------------------------------
+    accel_ned.V.X -= accgyro.accTrim[0];
+    accel_ned.V.Y -= accgyro.accTrim[1];
+    accel_ned.V.Z -= acc_1G + accgyro.accTrim[2];
+
+    //    printf("%d, %d, %d\n", (int)accel_ned.V.Z, angle[0]/100, angle[1]/100);
+
     // apply Deadband to reduce integration drift and vibration influence
     accSumZ[0] += applyDeadband((int32_t)(accel_ned.V.X), 0);
-    accSumZ[1] += applyDeadband((int32_t)(accel_ned.V.Y), 0); 
-    accSumZ[2] += applyDeadband((int32_t)(accel_ned.V.Z), 0); 		
+    accSumZ[1] += applyDeadband((int32_t)(accel_ned.V.Y), 0);
+    accSumZ[2] += applyDeadband((int32_t)(accel_ned.V.Z), 0);
 
     // sum up Values for later integration to get velocity and distance
-	  accSumZTimer += deltaT;			
+    accSumZTimer += deltaT;
     accSumZCount++;
 }
 
 static bool imuUseFastGains(void)
 {
-  if(powerupTimer >= 100) { // 2s
-    powerupTimer = 100;
-  } 
-  return (powerupTimer < 100);
+    if (powerupTimer >= 100) { // 2s
+        powerupTimer = 100;
+    }
+    return (powerupTimer < 100);
 }
 
 static float imuGetPGainScaleFactor(void)
 {
     if (imuUseFastGains()) {
         return 10.0f;
-		} else if(!fc.flags.motorArmed){
-				return 5.0f;
-		} else if((rcCommand[ROLL]!=0) || (rcCommand[PITCH]!=0)) {
-			  return 1.0f;
-		} else if(rcCommand[YAW]!=0) {
-			  return 4.0f;
-		} else {
+    } else if (!fc.flags.motorArmed) {
+        return 5.0f;
+    } else if ((rcCommand[ROLL] != 0) || (rcCommand[PITCH] != 0)) {
+        return 1.0f;
+    } else if (rcCommand[YAW] != 0) {
+        return 4.0f;
+    } else {
         return 1.0f;
     }
 }
@@ -162,12 +161,12 @@ static float imuGetPGainScaleFactor(void)
 static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
                                 bool useAcc, float ax, float ay, float az)
 {
-    static float integralFBx = 0.0f,  integralFBy = 0.0f, integralFBz = 0.0f;    // integral error terms scaled by Ki
+    static float integralFBx = 0.0f, integralFBy = 0.0f, integralFBz = 0.0f; // integral error terms scaled by Ki
     float recipNorm;
     float ex = 0, ey = 0, ez = 0;
     float qa, qb, qc;
-	  float dcmKpGain;
-	  float q[4];
+    float dcmKpGain;
+    float q[4];
 
     // Calculate general spin rate (rad/s)
     float spin_rate = sqrtf(SQ(gx) + SQ(gy) + SQ(gz));
@@ -188,17 +187,16 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
     }
 
     // Compute and apply integral feedback if enabled
-    if(imuRuntimeConfig->dcm_ki > 0.0f) {
+    if (imuRuntimeConfig->dcm_ki > 0.0f) {
         // Stop integrating if spinning beyond the certain limit
         if (spin_rate < DEGREES_TO_RADIANS(SPIN_RATE_LIMIT)) {
             float dcmKiGain = imuRuntimeConfig->dcm_ki;
-            integralFBx += dcmKiGain * ex * dt;    // integral error scaled by Ki
+            integralFBx += dcmKiGain * ex * dt; // integral error scaled by Ki
             integralFBy += dcmKiGain * ey * dt;
             integralFBz += dcmKiGain * ez * dt;
         }
-    }
-    else {
-        integralFBx = 0.0f;    // prevent integral windup
+    } else {
+        integralFBx = 0.0f; // prevent integral windup
         integralFBy = 0.0f;
         integralFBz = 0.0f;
     }
@@ -215,7 +213,7 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
     gx *= (0.5f * dt);
     gy *= (0.5f * dt);
     gz *= (0.5f * dt);
-				
+
     qa = q0;
     qb = q1;
     qc = q2;
@@ -232,8 +230,11 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
     q3 *= recipNorm;
 
     // Pre-compute rotation matrix from quaternion
-		q[0] = q0; q[1] = q1; q[2] = q2; q[3] = q3;
-    imuComputeRotationMatrix(rMat, q);                            
+    q[0] = q0;
+    q[1] = q1;
+    q[2] = q2;
+    q[3] = q3;
+    imuComputeRotationMatrix(rMat, q);
 }
 
 static bool imuIsAccelerometerHealthy(void)
@@ -252,16 +253,18 @@ static bool imuIsAccelerometerHealthy(void)
 }
 
 void imuUpdateEulerAngles(void)
-{		
+{
     angle[ROLL]  = (int32_t)(atan2_approx(rMat[2][1], rMat[2][2]) * (18000.0f / M_PI));
     angle[PITCH] = (int32_t)(((0.5f * M_PI) - acos_approx(-rMat[2][0])) * (18000.0f / M_PI));
-    angle[YAW]   = (int32_t)((-atan2_approx(rMat[1][0], rMat[0][0]) * (18000.0f / M_PI)));		
-						
-		//Êä³ö-180 ~ +180
-    if(abs(angle[ROLL]) >= 9000){
-  	  if(angle[PITCH] > 0) angle[PITCH] = 18000 - angle[PITCH];
-		  else angle[PITCH] = -18000 - angle[PITCH];		
-    }				
+    angle[YAW]   = (int32_t)((-atan2_approx(rMat[1][0], rMat[0][0]) * (18000.0f / M_PI)));
+
+    // è¾“å‡º-180 ~ +180
+    if (abs(angle[ROLL]) >= 9000) {
+        if (angle[PITCH] > 0)
+            angle[PITCH] = 18000 - angle[PITCH];
+        else
+            angle[PITCH] = -18000 - angle[PITCH];
+    }
 }
 
 void imuCalculateEstimatedAttitude(void)
@@ -269,86 +272,86 @@ void imuCalculateEstimatedAttitude(void)
     static uint16_t previousIMUUpdateTime;
     uint16_t currentTime;
     float deltaT;
-  
+
     bool useAcc = FALSE;
-	  uint8_t axis;
+    uint8_t axis;
 
     //-------------------------------------------------------------------------------------------------
-    currentTime = micros16();
-    deltaT = (uint16_t)(currentTime-previousIMUUpdateTime)*1e-6;
-    previousIMUUpdateTime = currentTime;  
-  
-	  if (deltaT > 0.2f) {
+    currentTime           = micros16();
+    deltaT                = (uint16_t)(currentTime - previousIMUUpdateTime) * 1e-6;
+    previousIMUUpdateTime = currentTime;
+
+    if (deltaT > 0.2f) {
         return;
     }
 
-    for(axis=0; axis<3; axis++) {
-//      accSmooth[axis] = (accSmooth[axis]*7 + accgyro.accData[axis]) / 8;
-//      gyroData[axis] = accgyro.gyroData[axis];      
-      
-      accSmooth[axis] = biquadFilterApply(&accIMUFilter[axis],  (float)accgyro.accData[axis]);	
-      gyroData[axis]  = biquadFilterApply(&gyroIMUFilter[axis], (float)accgyro.gyroData[axis]);	 
-    }    
-    
+    for (axis = 0; axis < 3; axis++) {
+        //      accSmooth[axis] = (accSmooth[axis]*7 + accgyro.accData[axis]) / 8;
+        //      gyroData[axis] = accgyro.gyroData[axis];
+
+        accSmooth[axis] = biquadFilterApply(&accIMUFilter[axis], (float)accgyro.accData[axis]);
+        gyroData[axis]  = biquadFilterApply(&gyroIMUFilter[axis], (float)accgyro.gyroData[axis]);
+    }
+
     if (imuIsAccelerometerHealthy()) {
         useAcc = TRUE;
     }
-		
-    //-------------------------------------------------------------------------------------------------
-		//1) ¸üÐÂËÄÔªÊý
-    imuMahonyAHRSupdate(deltaT,
-                        accgyro.gyroData[0]*gyroScale, accgyro.gyroData[1]*gyroScale, accgyro.gyroData[2]*gyroScale,
-                        useAcc, accSmooth[0], accSmooth[1], accSmooth[2]);
-    
-    //2) Éú³ÉÅ·À­½Ç
-    imuUpdateEulerAngles();		             
 
-		//3) ÓÉ×ªÒÆ¾ØÕó¼ÆËã³ö»úÉí¸÷Öá¼ÓËÙ¶È
-    imuCalculateAcceleration(deltaT); 
-        
+    //-------------------------------------------------------------------------------------------------
+    // 1) æ›´æ–°å››å…ƒæ•°
+    imuMahonyAHRSupdate(deltaT,
+                        accgyro.gyroData[0] * gyroScale, accgyro.gyroData[1] * gyroScale, accgyro.gyroData[2] * gyroScale,
+                        useAcc, accSmooth[0], accSmooth[1], accSmooth[2]);
+
+    // 2) ç”Ÿæˆæ¬§æ‹‰è§’
+    imuUpdateEulerAngles();
+
+    // 3) ç”±è½¬ç§»çŸ©é˜µè®¡ç®—å‡ºæœºèº«å„è½´åŠ é€Ÿåº¦
+    imuCalculateAcceleration(deltaT);
 }
 
 void imu_init(void)
-{  
-  float q[4];
+{
+    float q[4];
 
-  imuRuntimeConfig->dcm_kp = 2500.0f / 10000.0f;
-  imuRuntimeConfig->dcm_ki = 25.0f / 10000.0f;
+    imuRuntimeConfig->dcm_kp = 2500.0f / 10000.0f;
+    imuRuntimeConfig->dcm_ki = 25.0f / 10000.0f;
 
-  q[0] = q0; q[1] = q1; q[2] = q2; q[3] = q3;
-  imuComputeRotationMatrix(rMat, q);
-  
-  biquadFilterInitLPF(&accIMUFilter[0], 100, 1000);   
-  biquadFilterInitLPF(&accIMUFilter[1], 100, 1000);   
-  biquadFilterInitLPF(&accIMUFilter[2], 100, 1000);  
-  
-  biquadFilterInitLPF(&gyroIMUFilter[0], 150, 1000);   
-  biquadFilterInitLPF(&gyroIMUFilter[1], 150, 1000);   
-  biquadFilterInitLPF(&gyroIMUFilter[2], 150, 1000);   
-  
+    q[0] = q0;
+    q[1] = q1;
+    q[2] = q2;
+    q[3] = q3;
+    imuComputeRotationMatrix(rMat, q);
+
+    biquadFilterInitLPF(&accIMUFilter[0], 100, 1000);
+    biquadFilterInitLPF(&accIMUFilter[1], 100, 1000);
+    biquadFilterInitLPF(&accIMUFilter[2], 100, 1000);
+
+    biquadFilterInitLPF(&gyroIMUFilter[0], 150, 1000);
+    biquadFilterInitLPF(&gyroIMUFilter[1], 150, 1000);
+    biquadFilterInitLPF(&gyroIMUFilter[2], 150, 1000);
 }
 
 void imu_test(void)
-{  
-//  static uint8_t printfcnt;
-  
-  float deltaT;
-  static uint16_t previousTime;
-  uint16_t currentTime = micros16();
+{
+    //  static uint8_t printfcnt;
 
-  deltaT = (uint16_t)(currentTime-previousTime)*1e-6;
-  
-  // 2ms
-  if(deltaT >= 0.002f) {
-    previousTime = currentTime; 
-    
-    accgyro_update();
-    imuCalculateEstimatedAttitude();
-    
-//    if(printfcnt++ >= 5) {
-//      printfcnt = 0;
-//      printf("%02f,%02f,%02f\n", (float)angle[ROLL]/100.0f, (float)angle[PITCH]/100.0f, (float)angle[YAW]/100.0f);
-//    }
-  } 
-  
+    float deltaT;
+    static uint16_t previousTime;
+    uint16_t currentTime = micros16();
+
+    deltaT = (uint16_t)(currentTime - previousTime) * 1e-6;
+
+    // 2ms
+    if (deltaT >= 0.002f) {
+        previousTime = currentTime;
+
+        accgyro_update();
+        imuCalculateEstimatedAttitude();
+
+        //    if(printfcnt++ >= 5) {
+        //      printfcnt = 0;
+        //      printf("%02f,%02f,%02f\n", (float)angle[ROLL]/100.0f, (float)angle[PITCH]/100.0f, (float)angle[YAW]/100.0f);
+        //    }
+    }
 }

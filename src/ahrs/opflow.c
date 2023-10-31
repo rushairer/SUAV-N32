@@ -135,7 +135,7 @@ void opticalflow_update(void)
         // printf("%f,%f,%f,%f\n",optSpeed[0]*10, optSpeed[1]*10, optGyroFilter[0]*10, optGyroFilter[1]*10);
 
         //------------------------------------------------------------------------------------------------------------
-        // 2 ¼ÆËãdelta¡¢¹âÁ÷ÉãÏñÍ·ÀëµØ¸ß¶È(mm)
+        // 2 è®¡ç®—deltaã€å…‰æµæ‘„åƒå¤´ç¦»åœ°é«˜åº¦(mm)
         currentTimeForPixel = micros16();
         pixelDelta          = (uint16_t)(currentTimeForPixel - lastTimeForPixel) * 1e-6;
         ;
@@ -150,9 +150,9 @@ void opticalflow_update(void)
             OpticalflowAltitudeScaled = OpticalflowAltitude;
         }
 
-        // 3 ¼ÆËã¹âÁ÷Î»ÒÆ¼°ËÙ¶È
-        //   @ ·ÉÐÐÆ÷Î»ÒÆ = ¹âÁ÷Î»ÒÆ(²âÁ¿Öµ) - »úÌåÐý×ªÎ»ÒÆ(ÓÉÍÓÂÝÒÇ»ý·ÖµÃµ½Ðý×ª½Ç¶È)
-        //   @ ¹âÁ÷Êä³öÁ¿/10000 = ¹âÁ÷ÉãÏñÍ·ÒÆ¶¯(Ðý×ª)½Ç¶È£¬µ¥Î»ÊÇ»¡¶È
+        // 3 è®¡ç®—å…‰æµä½ç§»åŠé€Ÿåº¦
+        //   @ é£žè¡Œå™¨ä½ç§» = å…‰æµä½ç§»(æµ‹é‡å€¼) - æœºä½“æ—‹è½¬ä½ç§»(ç”±é™€èžºä»ªç§¯åˆ†å¾—åˆ°æ—‹è½¬è§’åº¦)
+        //   @ å…‰æµè¾“å‡ºé‡/10000 = å…‰æµæ‘„åƒå¤´ç§»åŠ¨(æ—‹è½¬)è§’åº¦ï¼Œå•ä½æ˜¯å¼§åº¦
         for (axis = 0; axis < 2; axis++) {
             optSpeed[axis] = optGyroFilter[axis] - pixel_flow_integral_filter[axis];
             optSpeed[axis] /= 500.0f;

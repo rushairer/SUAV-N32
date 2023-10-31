@@ -4,15 +4,11 @@
 
 #include "n32g430.h"
 
+#define VERSION_3 1
+#define VERSION_4 2
 
-#define VERSION_3   1
-#define VERSION_4   2
+// #define _VERSION_   VERSION_3
+#define _VERSION_ VERSION_4
 
-//#define _VERSION_   VERSION_3
-#define _VERSION_   VERSION_4
-
-
-// ZÖá¼ÓËÙ¶È¼ÆÎÂÆ®ÐÞÕý
-#define ACCGYRO_ACC_Z_TEMPTURE_CMP  
-
-
+// Zè½´åŠ é€Ÿåº¦è®¡æ¸©é£˜ä¿®æ­£
+#define ACCGYRO_ACC_Z_TEMPTURE_CMP
