@@ -50,7 +50,9 @@
         "firmware/n32g430_std_periph_driver/src/n32g430_spi.c",
         "firmware/n32g430_std_periph_driver/src/n32g430_wwdg.c",
         "firmware/CMSIS/device/startup/startup_n32g430_EWARM.s",
-        "firmware/CMSIS/device/startup/startup_n32g430.s"
+        "firmware/CMSIS/device/startup/startup_n32g430.s",
+        "firmware/n32g430_std_periph_driver/src/n32g430_beeper.c",
+        "firmware/n32g430_std_periph_driver/src/n32g430_exti.c"
       ],
       "toolchain": "GCC",
       "compileConfig": {
@@ -65,7 +67,7 @@
               "id": 1,
               "mem": {
                 "startAddr": "0x20000000",
-                "size": "0x2800"
+                "size": "0x2000"
               },
               "isChecked": "1",
               "noInit": false
@@ -76,8 +78,8 @@
               "tag": "IROM",
               "id": 1,
               "mem": {
-                "startAddr": "0x08000000",
-                "size": "0x10000"
+                "startAddr": "0x08004000",
+                "size": "0xC000"
               },
               "isChecked": "1",
               "isStartup": true

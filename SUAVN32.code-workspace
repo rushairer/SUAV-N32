@@ -2,6 +2,12 @@
     "folders": [
         {
             "path": "."
+        },
+        {
+            "path": "../suav_demo/suav_n32"
+        },
+        {
+            "path": "../n32iap"
         }
     ],
     "settings": {

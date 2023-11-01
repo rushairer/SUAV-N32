@@ -39,8 +39,8 @@ _Min_Stack_Size = 0x400; /* required amount of stack */
 /* Specify the memory areas */
 MEMORY
 {
-RAM (xrw)      : ORIGIN = 0x20000000, LENGTH = 16K
-FLASH (rx)      : ORIGIN = 0x08004000, LENGTH = 48K
+RAM (xrw)      : ORIGIN = 0x20000000, LENGTH = 0x4000       /* 16K */
+FLASH (rx)     : ORIGIN = 0x8006000, LENGTH = 0xC000       /* 64K */
 }
 
 /* Define output sections */
@@ -180,3 +180,4 @@ SECTIONS
 
   .ARM.attributes 0 : { *(.ARM.attributes) }
 }
+

@@ -83,6 +83,7 @@ int main(void)
             printTestTimer = 0;
 
             // 姿态角和气压计高度
+            printf("SUAV:");
             printf("%f,%f,%f,%ld,", angle[ROLL] / 100.0f, angle[PITCH] / 100.0f, angle[YAW] / 100.0f, BaroAlt);
             printf("%d,%d,%d,%d\n", rcCommand[ROLL], rcCommand[PITCH], rcCommand[THROTTLE], rcCommand[YAW]);
             //      printf("%.2f\n", batValue);
